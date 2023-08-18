@@ -1,55 +1,78 @@
-data class Book(val title: String, val author: String, val year: Int)
+data class Task(val id: Int, val title: String, val isCompleted: Boolean = false)
 
-    class Library (private val books: List<Book> = emptyList()){
-            fun addBook(book: Book): Library{
-                return Library(books + book)
-            }
-        fun getBooks(): List<Book>{
-            return books
-        }
+class TaskManager(private val tasks: List<Task> = emptyList()) {
+    fun addTask(title: String): TaskManager {
+        val newTask = Task(getNextId(), title)
+        return TaskManager(tasks + newTask)
     }
 
+    fun completeTask(id: Int): TaskManager {
+        val updatedTasks = tasks.map { if (it.id == id) it.copy(isCompleted = true) else it }
+        return TaskManager(updatedTasks)
+    }
 
+    fun getPendingTasks(): List<Task> {
+        return tasks.filterNot(Task::isCompleted)
+    }
+
+    fun getCompletedTasks(): List<Task> {
+        return tasks.filter(Task::isCompleted)
+    }
+
+    private fun getNextId(): Int {
+        return tasks.maxByOrNull(Task::id)?.id?.plus(1) ?: 1
+    }
+}
 
 fun main() {
-    val initialLibrary = Library()
-    var library = initialLibrary
+    var taskManager = TaskManager()
 
     while (true) {
-        println("1. Tambahkan buku")
-        println("2. Tampilkan semua buku")
-        println("3. Keluar")
+        println("1. Tambah Tugas")
+        println("2. Tandai Selesai")
+        println("3. Tugas yang Belum Selesai")
+        println("4. Tugas yang Sudah Selesai")
+        println("5. Keluar")
         print("Pilih tindakan: ")
 
         when (readLine()?.toIntOrNull()) {
             1 -> {
-                print("Judul buku: ")
+                print("Judul tugas: ")
                 val title = readLine() ?: ""
-                print("Penulis buku: ")
-                val author = readLine() ?: ""
-                print("Tahun terbit: ")
-                val year = readLine()?.toIntOrNull() ?: 0
-
-                val newBook = Book(title, author, year)
-                library = library.addBook(newBook)
-                println("Buku berhasil ditambahkan!")
+                taskManager = taskManager.addTask(title)
+                println("Tugas berhasil ditambahkan!")
             }
             2 -> {
-                val books = library.getBooks()
-                if (books.isEmpty()) {
-                    println("Belum ada buku dalam perpustakaan.")
-                } else {
-                    println("Daftar buku:")
-                    books.forEachIndexed { index, book ->
-                        println("${index + 1}. ${book.title} by ${book.author}, ${book.year}")
-                    }
-                }
+                print("Masukkan ID tugas yang selesai: ")
+                val id = readLine()?.toIntOrNull() ?: 0
+                taskManager = taskManager.completeTask(id)
+                println("Tugas ditandai selesai!")
             }
             3 -> {
+                val pendingTasks = taskManager.getPendingTasks()
+                displayTasks("Tugas yang Belum Selesai", pendingTasks)
+            }
+            4 -> {
+                val completedTasks = taskManager.getCompletedTasks()
+                displayTasks("Tugas yang Sudah Selesai", completedTasks)
+            }
+            5 -> {
                 println("Terima kasih!")
                 return
             }
             else -> println("Pilihan tidak valid.")
+        }
+    }
+}
+
+fun displayTasks(title: String, tasks: List<Task>) {
+    if (tasks.isEmpty()) {
+        println("$title: Tidak ada tugas.")
+    } else {
+        println("$title:")
+        tasks.forEach { task ->
+            val status = if (task.isCompleted) "[Selesai]" else "[Belum Selesai]"
+            println("${task.id}. ${task.title} $status")
         }
     }
 }
